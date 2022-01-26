@@ -1,5 +1,7 @@
+use serde::{Serialize, Deserialize};
 use std::net::IpAddr;
 
-struct Peer {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Peer {
     pub address: IpAddr,
 }

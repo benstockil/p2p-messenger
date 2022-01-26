@@ -1,12 +1,17 @@
-use tokio::sync::mpsc::Sender;
-use tokio::net::TcpStream;
+use serde::{Deserialize, Serialize};
+use tokio::sync::oneshot::Sender;
 
-#[derive(Debug)]
+use crate::objects::{Message, Peer};
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Request {
-    NewClient(TcpStream),
+    NewClient(Peer),
+    Message(Message),
+    Debug(String),
+    Stop,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Response {
     Ok,
     Err,

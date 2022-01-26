@@ -1,6 +1,7 @@
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::{io, net::TcpListener};
 
+use crate::actors::ClientHandler;
 use crate::request::{ReqRecvPair, Request, Response};
 
 pub struct PeerListener {
@@ -8,7 +9,7 @@ pub struct PeerListener {
 }
 
 impl PeerListener {
-    pub async fn new() -> Self {
+    pub fn new() -> Self {
         let (tx, rx): (Sender<ReqRecvPair>, Receiver<ReqRecvPair>) = mpsc::channel(10);
 
         // Spawn the listening process as an async task 
@@ -24,14 +25,13 @@ impl PeerListener {
 
         loop {
             let (socket, _) = listener.accept().await?;
-            todo!();
-            //let client_handler = ClientHandler::new(socket)?;
-            //state_handler.send(Request::NewClient(client_handler))
+            let client_handler = ClientHandler::new(socket);
+            state_handler.send(Request::NewClient(client_handler))
         }
     }
 
     pub async fn send(&self, request: Request) -> Response {
-        let (mut tx, mut rx) = mpsc::channel(1);
+        let (tx, mut rx) = mpsc::channel(1);
         let req_recv = (request, tx);
         self.tx.send(req_recv).await.unwrap();
 
