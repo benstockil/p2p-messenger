@@ -4,7 +4,7 @@ use tokio::sync::oneshot::Sender;
 use crate::objects::{Message, Peer};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum Request {
+pub enum InternalRequest {
     NewClient(Peer),
     Message(Message),
     Debug(String),
@@ -12,9 +12,9 @@ pub enum Request {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum Response {
+pub enum InternalResponse {
     Ok,
     Err,
 }
 
-pub type ReqRecvPair = (Request, Sender<Response>);
+pub type IRRPair = (InternalRequest, Sender<InternalResponse>);
