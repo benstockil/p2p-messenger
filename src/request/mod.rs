@@ -4,6 +4,6 @@ mod remote_request;
 pub use internal_request::{
     InternalRequest, 
     InternalResponse,
-    IRRPair,
+    Request,
 };
 pub use remote_request::RemoteRequest;
