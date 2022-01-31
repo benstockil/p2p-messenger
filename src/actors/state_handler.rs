@@ -17,7 +17,7 @@ impl StateHandler {
     }
 
     pub async fn debug(&self, message: String) {
-       self.handle.send(InternalRequest::Debug(message)).await;
+       self.handle.call(InternalRequest::Debug(message)).await;
     }
 }
 

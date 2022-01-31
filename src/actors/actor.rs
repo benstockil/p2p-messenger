@@ -1,13 +1,12 @@
 use async_trait::async_trait;
 use std::fmt::Debug;
 use tokio::{io, sync::{mpsc, oneshot}};
-use crate::request::Request;
 
 type RRPair<T> = (<T as Actor>::Request, oneshot::Sender<<T as Actor>::Response>);
 
 #[async_trait]
 pub trait Actor: Send {
-    type Request: Send + Debug + Request;
+    type Request: Send + Debug;
     type Response: Send + Debug;
     type Config: Send;
 
@@ -33,16 +32,18 @@ impl<T: Actor + 'static> ActorHandle<T> {
         Self { tx }
     }
 
-    pub async fn send(&self, request: T::Request) -> T::Response {
+    pub async fn send(&self, request: T::Request) {
+        let (tx, _) = oneshot::channel();
+        let req_recv = (request, tx);
+        self.tx.send(req_recv).unwrap();
+    }
+
+    pub async fn call(&self, request: T::Request) -> T::Response {
         let (tx, rx) = oneshot::channel();
         let req_recv = (request, tx);
         self.tx.send(req_recv).unwrap();
 
         rx.await.unwrap()
-    }
-
-    pub async fn stop(&self) {
-        self.send(<T as Actor>::Request::STOP_SIGNAL).await;
     }
 }
 

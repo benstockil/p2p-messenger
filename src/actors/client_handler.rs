@@ -21,6 +21,6 @@ impl ClientHandler {
     }
 
     pub async fn send_msg(&self, message: Message) -> InternalResponse {
-        self.handle.send(InternalRequest::Message(message)).await
+        self.handle.call(InternalRequest::Message(message)).await
     }
 }
