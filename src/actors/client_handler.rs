@@ -1,14 +1,13 @@
 use tokio::net::TcpStream;
 use crate::objects::Message;
 use crate::request::{
-    InternalRequest, 
     InternalResponse,
 };
 use crate::actors::{StateHandler, ClientHandlerActor};
 use super::actor::ActorHandle;
-use super::client_handler_actor::ClientHandlerConfig;
+use super::client_handler_actor::{ClientHandlerConfig, Request};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ClientHandler {
     handle: ActorHandle<ClientHandlerActor>
 }
@@ -21,6 +20,6 @@ impl ClientHandler {
     }
 
     pub async fn send_msg(&self, message: Message) -> InternalResponse {
-        self.handle.call(InternalRequest::Message(message)).await
+        self.handle.call(Request::Message(message)).await
     }
 }

@@ -4,6 +4,7 @@ use tokio::net::TcpStream;
 use tokio::sync::{mpsc, oneshot};
 use super::actor::Actor;
 use crate::actors::StateHandler;
+use crate::objects::Message;
 use crate::request::{InternalRequest, InternalResponse, RemoteRequest};
 
 type RRPair = (
@@ -16,6 +17,7 @@ pub struct ClientHandlerConfig {
     pub state_handler: StateHandler,
 }
 
+#[derive(Debug)]
 pub struct ClientHandlerActor {
     rx: mpsc::UnboundedReceiver<RRPair>,
     stream: TcpStream,
@@ -24,7 +26,7 @@ pub struct ClientHandlerActor {
 
 #[async_trait]
 impl Actor for ClientHandlerActor {
-    type Request = InternalRequest;
+    type Request = Request;
     type Response = InternalResponse;
     type Config = ClientHandlerConfig;
 
@@ -65,9 +67,9 @@ impl ClientHandlerActor {
         }
     }
 
-    async fn handle_internal_request(&mut self, request: InternalRequest, tx: oneshot::Sender<InternalResponse>) {
+    async fn handle_internal_request(&mut self, request: Request, tx: oneshot::Sender<InternalResponse>) {
         match request {
-            InternalRequest::Message(msg) => {
+            Request::Message(msg) => {
                 self.send_remote_request(RemoteRequest::Message(msg)).await;
             }
             _ => {},
@@ -79,4 +81,9 @@ impl ClientHandlerActor {
         let serialized = serde_json::to_vec(&request).unwrap();
         self.stream.write_all(serialized.as_slice()).await.unwrap();
     }
+}
+
+#[derive(Debug)]
+pub enum Request {
+    Message(Message),
 }

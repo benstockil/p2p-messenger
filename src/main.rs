@@ -10,5 +10,7 @@ async fn main() {
     let state_handler = StateHandler::new();
     let listener = PeerListener::new(state_handler.clone());
 
-    state_handler.debug("hi!".into()).await;
+    state_handler.debug("hi!".into()).await; 
+
+    std::thread::park();
 }

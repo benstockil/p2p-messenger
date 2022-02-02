@@ -15,6 +15,7 @@ pub trait Actor: Send {
     async fn run(&mut self) -> io::Result<()>;
 }
 
+#[derive(Debug)]
 pub struct ActorHandle<T: Actor> {
     tx: mpsc::UnboundedSender<RRPair<T>>,
 }
@@ -24,7 +25,7 @@ impl<T: Actor + 'static> ActorHandle<T> {
         let (tx, rx) = mpsc::unbounded_channel();
         
         // Spawn the listening process as an async task 
-        tokio::spawn(async move {
+        let join_handle = tokio::spawn(async move {
             let mut actor = T::new(rx, config);
             actor.run().await.unwrap();
         });
@@ -50,7 +51,7 @@ impl<T: Actor + 'static> ActorHandle<T> {
 impl<T: Actor> Clone for ActorHandle<T> {
     fn clone(&self) -> Self {
         Self {
-            tx: self.tx.clone()
+            tx: self.tx.clone(),
         }
     }
 }

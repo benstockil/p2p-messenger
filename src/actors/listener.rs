@@ -1,10 +1,10 @@
 use crate::actors::{PeerListenerActor, StateHandler};
 use super::{
     actor::ActorHandle, 
-    listener_actor::PeerListenerConfig
+    listener_actor::PeerListenerConfig,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PeerListener {
     handle: ActorHandle<PeerListenerActor>,
 }

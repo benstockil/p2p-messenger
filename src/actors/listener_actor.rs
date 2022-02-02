@@ -2,7 +2,8 @@ use async_trait::async_trait;
 use tokio::io;
 use tokio::net::TcpListener;
 use tokio::sync::{mpsc, oneshot};
-use crate::request::{InternalRequest, InternalResponse};
+use crate::objects::Peer;
+use crate::request::InternalResponse;
 use crate::actors::{ClientHandler, StateHandler};
 use super::actor::Actor;
 
@@ -15,6 +16,7 @@ pub struct PeerListenerConfig {
     pub state_handler: StateHandler,
 }
 
+#[derive(Debug)]
 pub struct PeerListenerActor {
     state_handler: StateHandler,
     rx: mpsc::UnboundedReceiver<RRPair>,
@@ -22,7 +24,7 @@ pub struct PeerListenerActor {
 
 #[async_trait]
 impl Actor for PeerListenerActor {
-    type Request = InternalRequest;
+    type Request = Request;
     type Response = InternalResponse;
     type Config = PeerListenerConfig;
 
@@ -39,9 +41,10 @@ impl Actor for PeerListenerActor {
         loop {
             let (socket, _) = listener.accept().await?;
             let client_handler = ClientHandler::new(socket, self.state_handler.clone());
-            // self.state_handler.send(
-            //     InternalRequest::NewClient(Peer { address: "192.168.0.43".parse().unwrap() })
-            // );
+            self.state_handler.new_client(client_handler).await;
         }
     }
 }
+
+#[derive(Debug)]
+pub enum Request {}

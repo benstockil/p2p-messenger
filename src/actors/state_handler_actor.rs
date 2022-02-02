@@ -2,7 +2,8 @@ use async_trait::async_trait;
 use tokio::io;
 use tokio::sync::{mpsc, oneshot};
 use crate::actors::{PeerListener, ClientHandler};
-use crate::request::{InternalRequest, InternalResponse};
+use crate::objects::{Message, Peer};
+use crate::request::InternalResponse;
 use super::actor::Actor;
 
 type RRPair = (
@@ -12,6 +13,7 @@ type RRPair = (
 
 pub struct StateHandlerConfig {}
 
+#[derive(Debug)]
 pub struct StateHandlerActor {
     peers: Vec<ClientHandler>,
     listener: Option<PeerListener>,
@@ -20,7 +22,7 @@ pub struct StateHandlerActor {
 
 #[async_trait]
 impl Actor for StateHandlerActor {
-    type Request = InternalRequest;
+    type Request = Request;
     type Response = InternalResponse;
     type Config = StateHandlerConfig;
 
@@ -37,11 +39,21 @@ impl Actor for StateHandlerActor {
         while run {
             let (incoming, response_channel) = self.rx.recv().await.unwrap();
             match incoming {
-                InternalRequest::Stop => { run = false; },
+                // Request::Stop => { run = false; },
+                Request::NewClient(client_handler) => {
+                    self.peers.push(client_handler);
+                }
                 _ => { dbg!(incoming); }
             }
             response_channel.send(InternalResponse::Ok).unwrap();
         }
         Ok(())
     }
+}
+
+#[derive(Debug)]
+pub enum Request {
+    NewClient(ClientHandler),
+    Message(Message),
+    Debug(String),
 }
