@@ -1,15 +1,44 @@
-use crate::actors::{PeerListenerActor, StateHandler};
-use super::{actor::ActorHandle, listener_actor::PeerListenerConfig, ui_handler_actor::{UiHandlerActor, UiHandlerConfig}};
+use async_trait::async_trait;
+use tui::{backend::CrosstermBackend, Terminal};
+use tokio::sync::{mpsc, oneshot};
+use std::io;
 
-#[derive(Clone, Debug)]
+use crate::actors::StateHandler;
+use crate::actor::{Actor, Address};
+
+type IRRPair = (Request, oneshot::Sender<Response>);
+
+pub struct UiHandlerConfig {
+    pub state_handler: Address<StateHandler>,
+}
+
+#[derive(Debug)]
+pub enum Request {}
+
+#[derive(Debug)]
+pub enum Response {}
+
+#[derive(Debug)]
 pub struct UiHandler {
-    handle: ActorHandle<UiHandlerActor>,
+    rx: mpsc::UnboundedReceiver<IRRPair>,
+    state_handler: StateHandler,
+}
+
+#[async_trait]
+impl Actor for UiHandler {
+    async fn run(&mut self) -> io::Result<()> {
+        let stdout = io::stdout();
+        let backend = CrosstermBackend::new(stdout);
+        let mut terminal = Terminal::new(backend)?;
+        Ok(())
+    }
 }
 
 impl UiHandler {
-    pub fn new(state_handler: StateHandler) -> Self {
-        let config = UiHandlerConfig { state_handler };
-        let handle = ActorHandle::run(config);
-        Self { handle }
+    fn new(rx: mpsc::UnboundedReceiver<IRRPair>, state_handler: Address<StateHandler>) -> Self {
+        Self {
+            rx,
+            state_handler,
+        }
     }
 }

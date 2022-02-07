@@ -1,18 +1,34 @@
-use crate::actors::{PeerListenerActor, StateHandler};
-use super::{
-    actor::ActorHandle, 
-    listener_actor::PeerListenerConfig,
-};
+use async_trait::async_trait;
+use tokio::io;
+use tokio::net::TcpListener;
+use tokio::sync::{mpsc, oneshot};
+use crate::objects::Peer;
+use crate::request::InternalResponse;
+use crate::actors::{ClientHandler, StateHandler};
+use crate::actor::{Actor, Address, Envelope};
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct PeerListener {
-    handle: ActorHandle<PeerListenerActor>,
+    state_handler: Address<StateHandler>,
+    rx: mpsc::UnboundedReceiver<Envelope>,
+}
+
+#[async_trait]
+impl Actor for PeerListener {
+    async fn run(&mut self) -> io::Result<()> {
+        let listener = TcpListener::bind("127.0.0.1:3030").await?;
+
+        loop {
+            let (socket, _) = listener.accept().await?;
+            let client_handler = ClientHandler::new(socket, self.state_handler.clone());
+            self.state_handler.new_client(client_handler).await;
+        }
+    }
 }
 
 impl PeerListener {
-    pub fn new(state_handler: StateHandler) -> Self {
-        let config = PeerListenerConfig { state_handler };
-        let handle = ActorHandle::run(config);
-        Self { handle }
+    fn new(rx: mpsc::UnboundedReceiver<Envelope>, state_handler: Address<StateHandler>) -> Self {
+        Self { rx, state_handler }
     }
+
 }

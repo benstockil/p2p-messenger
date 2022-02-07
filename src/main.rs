@@ -1,6 +1,7 @@
 mod actors;
+mod actor;
 mod objects;
-mod request;
+mod remote;
 
 use crate::actors::UiHandler;
 use crate::actors::StateHandler;

@@ -1,28 +1,48 @@
-use crate::{actors::StateHandlerActor, objects::{Message, Peer}};
-use super::{ClientHandler, actor::ActorHandle, state_handler_actor::{StateHandlerConfig, Request}};
+use async_trait::async_trait;
+use tokio::io;
+use tokio::sync::{mpsc, oneshot};
+use crate::actors::{PeerListener, ClientHandler};
+use crate::objects::{Message, Peer};
+use crate::request::InternalResponse;
+use crate::actor::{Actor, Address, Envelope};
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct StateHandler {
-    handle: ActorHandle<StateHandlerActor>,
+    peers: Vec<Address<ClientHandler>>,
+    listener: Address<PeerListener>,
+    rx: mpsc::UnboundedReceiver<Envelope>,
+}
+
+#[async_trait]
+impl Actor for StateHandler {
+    async fn run(&mut self) -> io::Result<()> {
+        let mut run = true;
+        while run {
+            let (incoming, response_channel) = self.rx.recv().await.unwrap();
+            match incoming {
+                // Request::Stop => { run = false; },
+                Request::NewClient(client_handler) => {
+                    self.peers.push(client_handler);
+                }
+                _ => { dbg!(incoming); }
+            }
+            response_channel.send(InternalResponse::Ok).unwrap();
+        }
+        Ok(())
+    }
 }
 
 impl StateHandler {
-    pub fn new() -> Self {
-        let config = StateHandlerConfig {};
-        let handle = ActorHandle::run(config);
-        Self { handle }
-    }
-
-    pub async fn debug(&self, message: String) {
-       self.handle.call(Request::Debug(message)).await;
-    }
-
-    pub async fn new_client(&self, peer: ClientHandler) {
-        self.handle.call(Request::NewClient(peer)).await;
-    }
-
-    pub async fn message(&self, message: Message) {
-        self.handle.call(Request::Message(message)).await;
+    fn new(rx: mpsc::UnboundedReceiver<Envelope>) -> Self {
+        Self {
+            rx,
+            peers: Vec::new(),
+            listener: None,
+        }
     }
 }
-
+pub enum Request {
+    NewClient(ClientHandler),
+    Message(Message),
+    Debug(String),
+}
