@@ -14,7 +14,7 @@ pub trait Actor: Send {
 
 #[derive(Debug)]
 pub struct ActorHandle<T: Actor> {
-    tx: mpsc::UnboundedSender<Envelope<T>>,
+    tx: mpsc::UnboundedSender<Envelope>,
 }
 
 impl<T: Actor> ActorHandle<T> {
