@@ -3,7 +3,6 @@ use tokio::io;
 use tokio::net::TcpListener;
 use tokio::sync::{mpsc, oneshot};
 use crate::objects::Peer;
-use crate::request::InternalResponse;
 use crate::actors::{ClientHandler, StateHandler};
 use crate::actor::{Actor, Address, Envelope};
 

@@ -3,8 +3,7 @@ use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::{mpsc, oneshot};
 use crate::actor::{Actor, Address, Envelope, Request};
-use crate::objects::Message;
-use crate::request::{InternalRequest, InternalResponse, RemoteRequest};
+use crate::remote::RemoteRequest;
 
 use super::StateHandler;
 
@@ -50,7 +49,7 @@ impl ClientHandler {
         }
     }
 
-    async fn handle_internal_request(&mut self, request: Request, tx: oneshot::Sender<InternalResponse>) {
+    async fn handle_internal_request(&mut self, request: Envelope) {
         match request {
             Request::Message(msg) => {
                 self.send_remote_request(RemoteRequest::Message(msg)).await;

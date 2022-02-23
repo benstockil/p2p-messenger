@@ -1,16 +1,20 @@
+use std::collections::HashMap;
 use async_trait::async_trait;
 use tokio::io;
 use tokio::sync::{mpsc, oneshot};
 use crate::actors::{PeerListener, ClientHandler};
-use crate::objects::{Message, Peer};
-use crate::request::InternalResponse;
+use crate::objects::{Group, GroupId, Message, Peer, User, UserId};
 use crate::actor::{Actor, Address, Envelope};
+
 
 #[derive(Debug)]
 pub struct StateHandler {
-    peers: Vec<Address<ClientHandler>>,
+    users: HashMap<UserId, User>,
+    peers: HashMap<UserId, Address<ClientHandler>>,
     listener: Address<PeerListener>,
+    groups: HashMap<GroupId, Group>,
     rx: mpsc::UnboundedReceiver<Envelope>,
+    messages: Vec<Message>,
 }
 
 #[async_trait]
@@ -36,9 +40,37 @@ impl StateHandler {
     fn new(rx: mpsc::UnboundedReceiver<Envelope>) -> Self {
         Self {
             rx,
-            peers: Vec::new(),
+            peers: HashMap::new(),
+            users: HashMap::new(),
+            groups: HashMap::new(),
             listener: None,
+            messages: Vec::new(),
         }
+    }
+
+    async fn new_user(&mut self, user: User) {
+        self.users.insert(user.id.clone(), user);
+    }
+
+    async fn new_connection(&mut self, user_id: UserId, address: Address<PeerListener>) {
+        self.peers.insert(user_id, address);
+    }
+
+    async fn new_group(&mut self, group: Group) {
+        self.groups.insert(group.id.clone(), group);
+    }
+
+    async fn broadcast_message(&self, message: Message) {
+        let group = self.groups.get(message.group).unwrap();
+        group
+            .members
+            .iter()
+            .map(|id| self.peers.get(id)?.send(Request::Message(message)))
+    }
+
+    async fn receive_message(&mut self, message: Message) {
+        self.messages.push(message);
+        self.broadcast_message(message).await;
     }
 }
 pub enum Request {
